@@ -14,8 +14,10 @@
     <Group key="Pin">
       <Data key="264be2d3-9481-494b-8d9c-c1905a45e9cc" value="Wire1" />
       <Data key="310ffaf9-0818-4206-92ac-6fdcce50f5d3/52f31aa9-2f0a-497d-9a1f-1424095e13e6" value="UART_tx" />
-      <Data key="ca9c900b-4bab-4eb0-ae06-740e87e17dc1" value="GREEN" />
-      <Data key="e851a3b9-efb8-48be-bbb8-b303b216c393" value="RED" />
+      <Data key="4782f7eb-44b7-4ccf-8273-44351a04d7a2" value="DISCNCT" />
+      <Data key="27926266-d213-491d-a42f-2cbcb6a7d021" value="SPARE" />
+      <Data key="ca9c900b-4bab-4eb0-ae06-740e87e17dc1" value="ADVTSNG" />
+      <Data key="e851a3b9-efb8-48be-bbb8-b303b216c393" value="ALERT" />
     </Group>
   </Group>
   <Group key="FlashSecurity">
@@ -1227,7 +1229,7 @@
   <Group key="Pin2">
     <Group key="264be2d3-9481-494b-8d9c-c1905a45e9cc">
       <Group key="0">
-        <Data key="Port Format" value="1,0" />
+        <Data key="Port Format" value="1,2" />
       </Group>
     </Group>
     <Group key="310ffaf9-0818-4206-92ac-6fdcce50f5d3/52f31aa9-2f0a-497d-9a1f-1424095e13e6">
@@ -1235,16 +1237,27 @@
         <Data key="Port Format" value="1,5" />
       </Group>
     </Group>
+    <Group key="4782f7eb-44b7-4ccf-8273-44351a04d7a2">
+      <Group key="0">
+        <Data key="Port Format" value="2,4" />
+      </Group>
+    </Group>
+    <Group key="27926266-d213-491d-a42f-2cbcb6a7d021">
+      <Group key="0">
+        <Data key="Port Format" value="2,5" />
+      </Group>
+    </Group>
     <Group key="ca9c900b-4bab-4eb0-ae06-740e87e17dc1">
       <Group key="0">
-        <Data key="Port Format" value="3,6" />
+        <Data key="Port Format" value="2,2" />
       </Group>
     </Group>
     <Group key="e851a3b9-efb8-48be-bbb8-b303b216c393">
       <Group key="0">
-        <Data key="Port Format" value="2,6" />
+        <Data key="Port Format" value="2,3" />
       </Group>
     </Group>
+    <Group key="UnAssigned Pins" />
   </Group>
   <Group key="PlaceDir">
     <Data key="count" value="0" />
