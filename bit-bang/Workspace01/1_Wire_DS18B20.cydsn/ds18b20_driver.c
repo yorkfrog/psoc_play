@@ -10,14 +10,24 @@
  * ========================================
  */
 
+/*******************************************************************************
+ * Module DS18B20 temp sensor
+ ****************************************************************************//**
+ *
+ * \Uses 1-wire communications to interact with temp sensor.
+ * \Assumptions
+ * - DS18B20 is powered (not using parasitic power)
+ * - there is only 1 device (DS18B20) on the 1-wire bus
+ * - 12bit temp resolution - changing this changes the temp read timings.
+ *
+ * \Reference
+ * datasheet: https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf
+ *
+ *********************************************************************************************/
+
+
+#include "stdio.h"
 #include <ds18b20_driver.h>
-/*
- #include <common.h>
- #include <bmp280.h>
- #include <sc_system.h>
- #include <sensor_config.h>
- #include <sensors_temp.h>
- */
 
 #ifdef SENSOR_DS18B20_ENABLED
 
@@ -30,16 +40,13 @@
  * For which the slaves will reply with a 0, within one time slot.
  *
  * <b>Note</b> Done initially to find the presence of devices in the network
- *
- *
- * \param mode
- * no parameter
- *
+ * See https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf : P15 sec. 1-Wire Signalling
  * \return
- *  returns the status.
+ *  returns the status
+ *  0 - success (presence pulse detected)
+ *  1 - failure ( no device responded)
  *
  *********************************************************************************************/
-
 uint8 Initialize_1_wire() {
 	uint8 status;
 	Wire1_Write(0);
@@ -62,7 +69,7 @@ uint8 Initialize_1_wire() {
  * <b>Note</b> All master writes are done based on this function
  *
  *
- * \param mode
+ * \param value
  * 1 bit write data
  *
  * \return
@@ -94,7 +101,7 @@ void Write_bit_1_wire(uint8 value) {
  * <b>Note</b> All master read actions are done based on this function. Master initiates read by pulling the line low.
  * Data should be read before 15us
  *
- * \param mode
+ * \param
  * no parameter
  *
  * \return
@@ -122,8 +129,7 @@ uint8 Read_bit_1_wire() {
  *
  * <b>Note</b> Write 1 byte of data using bit write function
  *
- *
- * \param mode
+ * \param payload
  * Write data
  *
  * \return
@@ -146,7 +152,6 @@ void Write8_1_wire(uint8 payload) {
  *
  * <b>Note</b> Reads 1 byte of data using bit read function
  *
- *
  * \param mode
  * no parameter
  *
@@ -164,6 +169,25 @@ uint8 Read8_1_wire() //Read 8 bits "clocked" out by the slave.
 }
 
 
+/*******************************************************************************
+ * Function Name: Config_ds18d20
+ ****************************************************************************//**
+ *
+ * \Set up the DS18D20
+ *
+ * <b>Note</b>
+ * - Skip channel as only one sensor
+ * - writes scratchpad
+ * - ignores Alarm registers
+ * - set resolution to 12bit
+ *
+ * \param mode
+ * no parameter
+ *
+ * \return
+ * void function
+ *
+ *********************************************************************************************/
 void Config_ds18d20() {
     /* As only single sensor is present in channel-Skip command */
      Write8_1_wire(SKIP_ADDR_CMND);
@@ -175,8 +199,9 @@ void Config_ds18d20() {
     Write8_1_wire(0x55);
     /*TL*/
     Write8_1_wire(0xA2);
-    /* Config(resoluion)7F- 12 bit resolution */
-    Write8_1_wire(RESOL_12BIT);
+
+    // Config temp read resolution - 9 bit resolution
+    Write8_1_wire(RESOL_9BIT);
 }
 
 void Request_scratchpad_read() {
@@ -223,7 +248,7 @@ void Do_scratchpad_read(uint8 scratchpad[9]) {
  * The CRC sum for the input data
  *
  *********************************************************************************************/
-uint16_t calculateCRC(uint8_t inByte[]) {
+uint8_t calculateCRC(const uint8_t inByte[]) {
 	uint16_t crc = 0;
 	uint8_t current_byte;
 
@@ -239,7 +264,43 @@ uint16_t calculateCRC(uint8_t inByte[]) {
 			current_byte >>= 1;
 		}
 	}
-	return crc;
+	return (uint8_t)crc;
+}
+
+/*******************************************************************************
+ * Function Name: check_crc
+ ****************************************************************************//**
+ *
+ * \check the scratchpad CRC against the Calculated CRC
+ *
+ * \param
+ * scratchpad[9]: the 9 bytes of the scratch pad.  Byte[8] is the read CRC.
+ *
+ * \return
+ * uint8_t 1 if the CRC is ok, 0 if the CRC check fails
+ *
+ *********************************************************************************************/
+uint8_t check_crc(const uint8_t scratchpad[9]) {
+	// check CRC for scratchpad
+	uint16_t is_crc_ok = 0;
+	uint16_t scratchpad_crc = calculateCRC(scratchpad);
+
+	char xmsg[40];
+	sprintf(xmsg, "CRC: CRC:%d CalcCRC:%d", scratchpad[8], scratchpad_crc);
+	UART_PutString(xmsg);
+	UART_PutCRLF();
+
+	if (scratchpad[8] == scratchpad_crc) {
+		is_crc_ok = 1;
+	} else {
+//#ifdef DEBUG
+		char msg[40];
+		sprintf(msg, "CRC FAILED: CRC:%d CalcCRC:%d", scratchpad[8], scratchpad_crc);
+		UART_PutString(msg);
+		UART_PutCRLF();
+//#endif // DEBUG
+	}
+	return is_crc_ok;
 }
 
 /*******************************************************************************

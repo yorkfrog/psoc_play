@@ -20,19 +20,11 @@ int main(void)
 {
     CyGlobalIntEnable; /* Enable global interrupts. */
    
-****
-****
-Add CRC check to Scratchpad read
-****
-***
-
-
-
     uint8 scratchpad[9];
     uint16 tempr;
     float temp_cel;
-    uint8 connect_status;
-    char msg[20];
+    uint8 connect_status = 0;
+    char msg[40];
     
     UART_Start();
     
@@ -40,17 +32,19 @@ Add CRC check to Scratchpad read
     
     if(connect_status==0)
     {
+    	// device detected
     	RED_Write(1);
         GREEN_Write(0);
     }
     else
     {
+    	// NO device detected
         RED_Write(0);
         GREEN_Write(1);        
     }
     CyDelay(SETUP_DLY);
 
-    sprintf(msg,"Temp sense Started.");
+    sprintf(msg,"Temp sense Started. status:%d", connect_status);
     UART_PutString(msg);
     UART_PutCRLF();
 
@@ -83,10 +77,8 @@ Add CRC check to Scratchpad read
 
         /* Wait until conversion completes */
         /* 
-         * CF - this could be the minimum 750ms delay it takes for sensor to 
-         * process temp reading ready to read.  
-         * Could split this call and use an interupt to trigger the temp read?
-         * This way we don't block for this 750ms.
+         * This assumes that the DS18B20 is using external power.
+         * See https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf - p11: Convert T [44h] section.
          */
         while(Read_bit_1_wire()==0);
         
@@ -106,21 +98,25 @@ Add CRC check to Scratchpad read
 
     	UART_PutString("+");
 
-        // Complete the 1Wire temp read from the
+        // Complete the 1Wire temp read from the DS18 scratchpad
 		Do_scratchpad_read(scratchpad);
 
-        // Combine the result to 16 bit register
-		// [0] LSB, [1] MSB
-        tempr=(scratchpad[1]<<8)+scratchpad[0];
+		// check CRC for scratchpad
+		if (check_crc(scratchpad)) {
+			// Combine the result to 16 bit register
+			// [0] LSB, [1] MSB
+			tempr=(scratchpad[1]<<8)+scratchpad[0];
 
-        temp_cel= convert_2_celsius(tempr);
-       
-        
-        
-        sprintf(msg,"TEMPERATURE = %f.2 C",temp_cel);
-        UART_PutString(msg);
-        UART_PutCRLF();
-        /* Place your application code here. */
+			temp_cel= convert_2_celsius(tempr);
+
+			sprintf(msg,"TEMPERATURE = %.10f C",temp_cel);
+			UART_PutString(msg);
+			UART_PutCRLF();
+		} else {
+			sprintf(msg,"CRC Check failed [CRC:%d]", scratchpad[8]);
+			UART_PutString(msg);
+			UART_PutCRLF();
+		}
     }
 }
 

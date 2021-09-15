@@ -35,7 +35,11 @@
 
 	#define SKIP_ADDR_CMND 0xCC
 	#define WRITE_SC_PAD   0x4E
+
+	// see datasheet p9, table 2 for temp resolution settings
 	#define RESOL_12BIT 0x7F
+	#define RESOL_9BIT 0x1F
+
 	#define START_CONVERT 0x44
 	#define READ_SC_PAD 0xBE
 	#define SETUP_DLY 1000
@@ -45,6 +49,9 @@
 	void Config_ds18d20();
 	void Do_scratchpad_read(uint8 scratchpad[9]);
 	void Request_scratchpad_read();
+	uint8_t calculateCRC(const uint8_t inByte[]);
+	uint8_t check_crc(const uint8_t scratchpad[9]);
+
 	float convert_2_celsius(uint16_t temp);
 	float convert_2_fahrenheit(uint16_t temp) ;
 
